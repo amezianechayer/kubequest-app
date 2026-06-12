@@ -4,4 +4,4 @@ resources:
   - ../../base
 images:
   - name: ghcr.io/amezianechayer/sample-app
-    newTag: "v1.0.0"
+    newTag: "v1b1ab73"
