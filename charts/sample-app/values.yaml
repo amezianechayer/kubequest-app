@@ -1,15 +1,19 @@
+replicaCount: 2
+
 image:
   repository: ghcr.io/amezianechayer/sample-app
-  tag: "v1.0.0"
   pullPolicy: IfNotPresent
-replicaCount: 2
+  tag: "v1.0.0"
+
 service:
   type: ClusterIP
   port: 80
+
 ingress:
   enabled: true
-  className: "nginx"
+  className: nginx
   host: app.kubequest.local
+
 resources:
   requests:
     cpu: 50m
@@ -17,40 +21,68 @@ resources:
   limits:
     cpu: 300m
     memory: 512Mi
-affinity:
-  podAntiAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector:
-          matchExpressions:
-            - key: app.kubernetes.io/name
-              operator: In
-              values:
-                - sample-app
-        topologyKey: kubernetes.io/hostname
+
 autoscaling:
   enabled: true
   minReplicas: 2
   maxReplicas: 4
   targetCPUUtilizationPercentage: 70
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: sample-app
+          topologyKey: kubernetes.io/hostname
+
 livenessProbe:
   httpGet:
     path: /
     port: 80
-  initialDelaySeconds: 120
-  periodSeconds: 15
-  failureThreshold: 5
+  initialDelaySeconds: 60
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 6
+
 readinessProbe:
   httpGet:
     path: /
     port: 80
-  initialDelaySeconds: 120
+  initialDelaySeconds: 20
   periodSeconds: 10
-  failureThreshold: 5
+  timeoutSeconds: 5
+  failureThreshold: 6
+
 config:
   APP_ENV: production
   APP_DEBUG: "false"
   DB_CONNECTION: mysql
   DB_PORT: "3306"
   DB_DATABASE: app_database
+
+database:
+  host: "sample-app-sample-app-mysql"
+
 mysql:
   enabled: false
+  database: app_database
+  user: app_user
+  rootPassword: "RootStrongPass456!"
+  password: "StrongPass123!"
+  storage: "5Gi"
+
+migration:
+  enabled: true
+  backoffLimit: 3
+  waitAttempts: 30
+  waitSeconds: 2
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 150m
+      memory: 256Mi
